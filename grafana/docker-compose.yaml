@@ -1,0 +1,75 @@
+version: "2"
+
+networks:
+  grafana:
+
+services:
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./example-data/grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3000:3000"
+    networks:
+      - grafana
+
+  loki:
+    image: grafana/loki:2.0.0
+    container_name: loki
+    environment:
+      - TZ=Asia/Shanghai
+      - JAEGER_AGENT_HOST=tempo
+      - JAEGER_ENDPOINT=http://tempo:14268/api/traces # send traces to Tempo
+      - JAEGER_SAMPLER_TYPE=const
+      - JAEGER_SAMPLER_PARAM=1
+    volumes:
+      - ./etc/loki:/etc/loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/loki-docker-config.yaml
+    networks:
+      - grafana
+
+  promtail:
+    image: grafana/promtail:2.0.0
+    container_name: promtail
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./etc/promtail:/etc/promtail
+    command: -config.file=/etc/promtail/promtail-docker-config.yaml
+    networks:
+      - grafana
+
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tempo
+    environment:
+      - TZ=Asia/Shanghai
+    command: -config.file=/etc/tempo/tempo-local.yaml
+    volumes:
+      - ./etc/tempo:/etc/tempo
+      - ./example-data/tempo:/tmp/tempo
+    ports:
+      - "14268:14268"  # jaeger ingest
+    networks:
+      - grafana
+
+  tempo-query:
+    image: grafana/tempo-query:latest
+    container_name: tempo-query
+    environment:
+      - TZ=Asia/Shanghai
+    command: ["--grpc-storage-plugin.configuration-file=/etc/tempo/tempo-query.yaml"]
+    volumes:
+      - ./etc/tempo:/etc/tempo
+    ports:
+      - "16686:16686"  # jaeger-ui
+    depends_on:
+      - tempo
+    networks:
+      - grafana
+
