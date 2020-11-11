@@ -40,6 +40,7 @@ services:
       - TZ=Asia/Shanghai
     volumes:
       - ./etc/promtail:/etc/promtail
+      - ./example-data/gateway_trace_log:/trace/
     command: -config.file=/etc/promtail/promtail-docker-config.yaml
     networks:
       - grafana
@@ -55,6 +56,7 @@ services:
       - ./example-data/tempo:/tmp/tempo
     ports:
       - "14268:14268"  # jaeger ingest
+      - "14250:14250"
     networks:
       - grafana
 
@@ -73,3 +75,31 @@ services:
     networks:
       - grafana
 
+  jaeger-agent:
+    image: jaegertracing/jaeger-agent:latest
+    container_name: jaeger-agent
+    environment:
+      - TZ=Asia/Shanghai
+    command: ["--reporter.grpc.host-port=tempo:14250"]
+    ports:
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+    depends_on:
+      - tempo
+    networks:
+      - grafana
+
+  nginx:
+    image: opentracing/openresty
+    container_name: nginx-gateway
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./etc/nginx/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf
+      - ./etc/nginx/jaeger-config.json:/etc/jaeger-config.json
+    ports:
+      - "8080:8080"
+    networks:
+      - grafana
