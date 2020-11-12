@@ -11,6 +11,7 @@ services:
       - TZ=Asia/Shanghai
     volumes:
       - ./example-data/grafana/provisioning:/etc/grafana/provisioning
+      - ./example-data/log/grafana:/var/log/grafana
     ports:
       - "3000:3000"
     networks:
@@ -22,11 +23,12 @@ services:
     environment:
       - TZ=Asia/Shanghai
       - JAEGER_AGENT_HOST=tempo
-      - JAEGER_ENDPOINT=http://tempo:14268/api/traces # send traces to Tempo
+      - JAEGER_ENDPOINT=http://tempo:3100/api/traces # send traces to Tempo
       - JAEGER_SAMPLER_TYPE=const
       - JAEGER_SAMPLER_PARAM=1
     volumes:
       - ./etc/loki:/etc/loki
+      - ./example-data/loki:/loki
     ports:
       - "3100:3100"
     command: -config.file=/etc/loki/loki-docker-config.yaml
@@ -40,7 +42,7 @@ services:
       - TZ=Asia/Shanghai
     volumes:
       - ./etc/promtail:/etc/promtail
-      - ./example-data/gateway_trace_log:/trace/
+      - './example-data/log:/var/log'
     command: -config.file=/etc/promtail/promtail-docker-config.yaml
     networks:
       - grafana
@@ -99,6 +101,7 @@ services:
     volumes:
       - ./etc/nginx/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf
       - ./etc/nginx/jaeger-config.json:/etc/jaeger-config.json
+      - ./example-data/log/nginx:/var/log/nginx
     ports:
       - "8080:8080"
     networks:

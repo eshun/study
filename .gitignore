@@ -1,0 +1,3 @@
+/grafana/example-data/log/**
+/grafana/example-data/loki/**
+/grafana/example-data/tempo/**
