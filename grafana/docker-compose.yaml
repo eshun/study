@@ -94,7 +94,7 @@ services:
       - grafana
 
   nginx:
-    image: opentracing/openresty
+    image: opentracing/openresty:latest
     container_name: nginx-gateway
     environment:
       - TZ=Asia/Shanghai
